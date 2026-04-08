@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IncantoApiServer", "IncantoApiServer\IncantoApiServer.csproj", "{56425833-944B-4A50-A083-0B7F8D93BDAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{56425833-944B-4A50-A083-0B7F8D93BDAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56425833-944B-4A50-A083-0B7F8D93BDAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56425833-944B-4A50-A083-0B7F8D93BDAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56425833-944B-4A50-A083-0B7F8D93BDAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

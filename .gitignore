@@ -1,0 +1,4 @@
+﻿IncantoApiServer/bin/
+IncantoApiServer/obj/
+IncantoApiServer/.env
+.env

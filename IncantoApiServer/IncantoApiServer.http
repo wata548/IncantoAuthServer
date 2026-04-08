@@ -1,0 +1,6 @@
+@IncantoApiServer_HostAddress = http://localhost:5071
+
+GET {{IncantoApiServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
