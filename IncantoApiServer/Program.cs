@@ -1,4 +1,5 @@
 using Account;
+using MatchMaking;
 using Redis;
 using StackExchange.Redis;
 
@@ -16,6 +17,7 @@ public class Program {
         var rlService = new RateLimitService(redis.GetDatabase());
 
         var account = new Account.Account(rlService);
+        var match = new MatchSystem(rlService);
         
         pApp.MapGet("/", () => "Hello?")
             .WithName("GetWeatherForecast");
@@ -25,6 +27,9 @@ public class Program {
             await account.SignIn(pInfo.Mail, pInfo.PassWord));
         pApp.MapPost("/signUp", async (AccountInfo pInfo) =>
             await account.SignUp(pInfo.Name, pInfo.Mail, pInfo.PassWord, pInfo.TwoFactorAuth));
+        pApp.MapPost("/test", async (string pGuid) => {
+            await match.EnterMatch(pGuid);
+        });
     }
     
     public static void Main(string[] args) {

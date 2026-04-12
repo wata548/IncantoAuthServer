@@ -36,11 +36,24 @@ return {current, ttl};";
         var remain = (int)result[1];
     }
 
+    public async Task<bool> ChangeTTL(string pKey, TimeSpan pTime) {
+        const string script = @"
+        local value = redis.call('GET', KEYS[1]);
+        if not value then 
+            return false;
+        end
+        redis.call('EXPIRE', KEYS[1], ARGV[1]);
+        return true;";
+        var result = await _connect.ScriptEvaluateAsync(script, [pKey], [(int)pTime.TotalSeconds]);
+        return (bool)result[0];
+    }
+    
     public async Task<RedisData> Get(string pKey) {
         const string script = @"
 local value = redis.call('GET', KEYS[1]);
 if not value then 
     return {-2, ''};
+end
 local ttl = redis.call('TTL', KEYS[1]);
 return {ttl, value};";
         var result = await _connect.ScriptEvaluateAsync(script, [pKey], []);

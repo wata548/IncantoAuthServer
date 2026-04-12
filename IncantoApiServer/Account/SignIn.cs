@@ -3,6 +3,8 @@ using Redis;
 using MySql.Data.MySqlClient;
 
 public partial class Account {
+    public static readonly TimeSpan LoginTokenExpire = TimeSpan.FromMinutes(90);
+    
     public async Task<Result> SignIn(string pMail, string pPassword) {
         var rl = await _rlService.CheckAndIncrement($"rl:SignIn:{pMail}",
             5,
@@ -27,6 +29,7 @@ public partial class Account {
         await _rlService.Remove($"rl:SignIn:{pMail}");
         await _rlService.Remove($"2fa:MailCheck:{pMail}");
         var guid = Guid.NewGuid();
+        await _rlService.Add($"auth:{guid}", pMail, LoginTokenExpire);
         
         return new(Status.Success, guid.ToString());
     }
