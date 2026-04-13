@@ -32,8 +32,6 @@ return {current, ttl};";
     public async Task Add(string pKey, string pValue, TimeSpan pTime) {
         const string script = @"redis.call('SETEX', KEYS[1], ARGV[2], ARGV[1]);";
         var result = await _connect.ScriptEvaluateAsync(script, [pKey], [pValue, (int)pTime.TotalSeconds]);
-        var cnt = (int)result[0];
-        var remain = (int)result[1];
     }
 
     public async Task<bool> ChangeTTL(string pKey, TimeSpan pTime) {
@@ -45,7 +43,7 @@ return {current, ttl};";
         redis.call('EXPIRE', KEYS[1], ARGV[1]);
         return true;";
         var result = await _connect.ScriptEvaluateAsync(script, [pKey], [(int)pTime.TotalSeconds]);
-        return (bool)result[0];
+        return (bool)result;
     }
     
     public async Task<RedisData> Get(string pKey) {
@@ -60,7 +58,7 @@ return {ttl, value};";
         var ttl = (int)result[0];
         if (ttl == -2)
             return new("", "", -2);
-        var value = result[1]!;
+        var value = result[1].ToString();
         return new(pKey, value, ttl);
     }
 }

@@ -23,13 +23,12 @@ public partial class Account {
         await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
         connection.Open();
         pPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
-        var commandString = $"INSERT INTO USERS(NAME, EMAIL, PASSWORD) VALUES ('{pName}', '{pMail}', '{pPassword}')";
+        var commandString = $"INSERT INTO USERS(NAME, MAIL, PASSWORD) VALUES ('{pName}', '{pMail}', '{pPassword}')";
         var command = new MySqlCommand(commandString, connection);
         if (await command.ExecuteNonQueryAsync() == 1) {
             await _rlService.Remove($"rl:SignUp:{pMail}");
             return new(Status.Success, "성공적으로 회원가입되었습니다.");
         }
-
         return new(Status.Fail, "회원가입에 실패했습니다.");
     }
 }
