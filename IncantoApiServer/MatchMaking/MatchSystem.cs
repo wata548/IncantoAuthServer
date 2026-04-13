@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Account;
 using Redis;
 
 namespace MatchMaking;
@@ -18,17 +19,17 @@ public class MatchSystem(RateLimitService pRl) {
 	private readonly ConcurrentQueue<string> _waitMatch = new();
 	private readonly ConcurrentDictionary<string, bool> _waitStatus = new();
 
-	public async Task<Result> Enter(string pMail, string pAuthGuid) {
-		var loginToken = await _rlService.Get($"auth:{pMail}");
+	public async Task<Result> Enter(AccountToken pToken) {
+		var loginToken = await _rlService.Get($"auth:{pToken.Mail}");
 		if (loginToken.TTL == -2)
 			return new(Status.Fail, "로그인 상태가 아닙니다. 로그인 후 다시 시도해 주세요.");
         
-		if((string)loginToken.Value != pAuthGuid)
+		if((string)loginToken.Value != pToken.Guid)
 			return new(Status.Fail, "올바르지 않은 토큰입니다.");
 		
-		_waitMatch.Enqueue(pAuthGuid);
-		_waitStatus[pAuthGuid] = true;
-		await _rlService.ChangeTTL($"auth:{pMail}", Account.Account.LoginTokenExpire);
+		_waitMatch.Enqueue(pToken.Guid);
+		_waitStatus[pToken.Guid] = true;
+		await _rlService.ChangeTTL($"auth:{pToken.Mail}", Account.Account.LoginTokenExpire);
 		return new(Status.Success, "정상적으로 매치에 참여했습니다.");
 	}
 
