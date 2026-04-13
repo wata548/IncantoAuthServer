@@ -35,6 +35,10 @@ public partial class Account {
 		var guid = Guid.NewGuid().ToString();
 		await _rlService.Add($"auth:{pMail}", guid, LoginTokenExpire);
 
-		return new Result<AccountToken>(Status.Success, new(name, pMail, guid));
+		return new Result<AccountToken>(Status.Success, new() {
+			Name = name,
+			Mail = pMail,
+			Guid = guid
+		});
 	}
 }

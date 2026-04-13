@@ -10,8 +10,8 @@ public class UpdateManager {
 }
 
 public class UpdateLoop(UpdateManager pManager): BackgroundService {
-	public const int UpdateInterval = 20;
-	private UpdateManager _manager = pManager;
+	public const int UpdateInterval = 1000;
+	private readonly UpdateManager _manager = pManager;
 	
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		while (!stoppingToken.IsCancellationRequested) {

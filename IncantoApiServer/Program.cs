@@ -36,7 +36,6 @@ public class Program {
 		});	
 		pBuilder.Services.AddSingleton<Account.Account>();
 		pBuilder.Services.AddSingleton<MatchSystem>();
-		
 		pBuilder.Services.AddHostedService<UpdateLoop>();
 	}
     

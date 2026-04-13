@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Account;
+using IncantoApiServer.UpdateLogic;
 using Redis;
 
 namespace MatchMaking;
@@ -14,7 +15,8 @@ public class MatchPlayers(List<string> pPlayers, int pStartIdx) {
 			);
 }
 
-public class MatchSystem(RateLimitService pRl) {
+public class MatchSystem(RateLimitService pRl, UpdateManager pManager): UpdateModule(pManager) {
+	
 	private readonly RateLimitService _rlService = pRl;
 	private readonly ConcurrentQueue<string> _waitMatch = new();
 	private readonly ConcurrentDictionary<string, bool> _waitStatus = new();
@@ -62,5 +64,10 @@ public class MatchSystem(RateLimitService pRl) {
 		}
 
 		return result;
+	}
+
+	public async override Task Update() {
+		var match = Tick();
+		//Console.WriteLine(match.Length);
 	}
 }
