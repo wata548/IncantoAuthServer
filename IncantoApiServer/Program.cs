@@ -16,8 +16,10 @@ public class Program {
 			await pAccount.SignIn(pInfo.Mail, pInfo.PassWord));
 		pApp.MapPost("/signUp", async (Account.Account pAccount, SignUpInfo pInfo ) =>
 			await pAccount.SignUp(pInfo.Name, pInfo.Mail, pInfo.PassWord, pInfo.TwoFactorAuth));
-		pApp.MapPost("/test", async (MatchSystem pMatch, AccountToken pToken) =>
+		pApp.MapPost("/JoinMatch", async (MatchSystem pMatch, AccountToken pToken) =>
 			await pMatch.Enter(pToken));
+		pApp.MapPost("/ExitMatch", (MatchSystem pMatch, AccountToken pToken) =>
+			pMatch.Exit(pToken));
 	}
 
 	public static void SetSingleton(WebApplicationBuilder pBuilder) {
@@ -50,11 +52,10 @@ public class Program {
 
 		app.UseSwagger();
 		app.UseSwaggerUI();
-        
+		
 		if (app.Environment.IsDevelopment()) {
 		}
 
-		app.UseHttpsRedirection();
 		ApiSetUp(app);
         
 		app.Run();

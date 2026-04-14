@@ -35,12 +35,14 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager): UpdateMo
 		return new(Status.Success, "정상적으로 매치에 참여했습니다.");
 	}
 
-	public void Exit(string pAuthGuid) {
-		_waitStatus.TryRemove(pAuthGuid, out _);
-	}
+	public void Exit(AccountToken pToken) =>
+		_waitStatus.TryRemove(pToken.Guid, out _);
 
 	public MatchPlayers[] Tick() {
 
+		if (_waitMatch.Count < MatchPlayers.MatchPerPlayer)
+			return [];
+		
 		var playablePlayer = new List<string>();
 		while (_waitMatch.TryDequeue(out var player)) {
 			if(!_waitStatus.TryGetValue(player, out var v) || !v)
