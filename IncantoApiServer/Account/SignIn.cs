@@ -14,10 +14,13 @@ public partial class Account {
 			return new(Status.Fail, "잠시 후에 시도해 주세요");
 
 		const string commandString = "SELECT PASSWORD, NAME FROM USERS WHERE MAIL = @mail";
+		
 		await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
 		await connection.OpenAsync();
+		
 		await using var command = new MySqlCommand(commandString, connection);
 		command.Parameters.AddWithValue("@mail", pMail);
+		
 		await using var reader = await command.ExecuteReaderAsync();
 		//DummyHash
 		var password = "$2a$12$25YNmW5kGcHjN06LSf9n9.FHqu7gHRiPXgaZ1/hlW/5FkIPKDI4.m";

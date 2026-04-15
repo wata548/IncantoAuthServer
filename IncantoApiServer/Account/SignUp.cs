@@ -4,6 +4,19 @@ using MySql.Data.MySqlClient;
 
 public partial class Account {
     public async Task<Result> SignUp(string pName, string pMail, string pPassword, string p2fa) {
+
+        const string CntCommand = "SELECT COUNT(*) FROM USERS WHERE Mail = @mail";
+        const string InsertCommand = "INSERT INTO USERS(NAME, MAIL, PASSWORD) VALUES (@name, @mail, @password)";
+        
+        await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
+        await connection.OpenAsync();
+        
+        var command = new MySqlCommand(CntCommand, connection);
+        command.Parameters.AddWithValue("@mail", pMail);
+
+        var cnt = Convert.ToInt32(await command.ExecuteScalarAsync());
+        if (cnt != 0)
+            return new(Status.Fail, "이미 등록된 메일 주소입니다.");
         
         var rl = _rlService.CheckAndIncrement($"rl:SignUp:{pMail}",
             10,
@@ -20,12 +33,12 @@ public partial class Account {
         if (available.Status != Status.Success)
             return available;
         
-        await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
-        connection.Open();
         pPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
-        var commandString = $"INSERT INTO USERS(NAME, MAIL, PASSWORD) VALUES ('{pName}', '{pMail}', '{pPassword}')";
-        var command = new MySqlCommand(commandString, connection);
-        if (await command.ExecuteNonQueryAsync() == 1) {
+        await using var insertCommand = new MySqlCommand(InsertCommand, connection);
+        insertCommand.Parameters.AddWithValue("@name", pName);
+        insertCommand.Parameters.AddWithValue("@mail", pMail);
+        insertCommand.Parameters.AddWithValue("@password", pPassword);
+        if (await insertCommand.ExecuteNonQueryAsync() == 1) {
             await _rlService.Remove($"rl:SignUp:{pMail}");
             return new(Status.Success, "성공적으로 회원가입되었습니다.");
         }
