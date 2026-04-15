@@ -34,7 +34,6 @@ public partial class Account {
 			return new(Status.Fail, "이메일 또는 비밀번호가 잘못되었습니다.");
 
 		await _rlService.Remove($"rl:SignIn:{pMail}");
-		await _rlService.Remove($"2fa:MailCheck:{pMail}");
 		var guid = Guid.NewGuid().ToString();
 		await _rlService.Add($"auth:{pMail}", guid, LoginTokenExpire);
 

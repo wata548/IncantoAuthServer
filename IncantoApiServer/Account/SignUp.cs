@@ -40,7 +40,15 @@ public partial class Account {
         insertCommand.Parameters.AddWithValue("@password", pPassword);
         if (await insertCommand.ExecuteNonQueryAsync() == 1) {
             await _rlService.Remove($"rl:SignUp:{pMail}");
-            return new(Status.Success, "성공적으로 회원가입되었습니다.");
+            await _rlService.Remove($"2fa:MailCheck:{pMail}");
+            var guid = Guid.NewGuid().ToString();
+            await _rlService.Add($"auth:{pMail}", guid, LoginTokenExpire);
+
+            return new Result<AccountToken>(Status.Success, new() {
+                Name = pName,
+                Mail = pMail,
+                Guid = guid
+            });
         }
         return new(Status.Fail, "회원가입에 실패했습니다.");
     }
