@@ -58,14 +58,14 @@ public class Program {
 		var builder = WebApplication.CreateBuilder(args);
 		builder.Services.AddEndpointsApiExplorer();
 		builder.Services.AddSwaggerGen();
-
-		builder.Services.AddControllers()
-			.AddJsonOptions(options => {
-				options.JsonSerializerOptions.PropertyNamingPolicy = null;
-			});
-	
+		
 		Certification(builder);
 		SetSingleton(builder);
+
+		builder.Services.ConfigureHttpJsonOptions(options => 
+			options.SerializerOptions.PropertyNamingPolicy = null
+		);
+		
 		var app = builder.Build();
 
 		app.UseSwagger();
