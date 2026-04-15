@@ -58,6 +58,11 @@ public class Program {
 		var builder = WebApplication.CreateBuilder(args);
 		builder.Services.AddEndpointsApiExplorer();
 		builder.Services.AddSwaggerGen();
+
+		builder.Services.AddControllers()
+			.AddJsonOptions(options => {
+				options.JsonSerializerOptions.PropertyNamingPolicy = null;
+			});
 	
 		Certification(builder);
 		SetSingleton(builder);
