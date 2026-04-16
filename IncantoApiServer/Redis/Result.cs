@@ -4,7 +4,6 @@ namespace Redis;
 public enum Status {
     Success,
     Fail,
-    OutLimit
 } 
 
 public class Result(Status pStatus, string pContext) {

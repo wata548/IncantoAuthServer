@@ -7,6 +7,12 @@ public partial class Account {
 
         const string CntCommand = "SELECT COUNT(*) FROM USERS WHERE Mail = @mail";
         const string InsertCommand = "INSERT INTO USERS(NAME, MAIL, PASSWORD) VALUES (@name, @mail, @password)";
+
+        //TODO: This point have weak point(DDos). need to add Ip rate limit
+        if (pName.Length < 3)
+            return new(Status.Fail, "이름이 너무 짧습니다.(최소 3)");
+        if (pPassword.Length < 8)
+            return new(Status.Fail, "비밀번호가 너무 짧습니다.(최소 8)");
         
         await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
         await connection.OpenAsync();

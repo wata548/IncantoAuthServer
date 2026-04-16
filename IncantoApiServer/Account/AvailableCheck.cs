@@ -17,7 +17,7 @@ public partial class Account (RateLimitService pRl) {
 
         var rl = await GetRLAvailableMail(pIp);
         if (!rl.Allow)
-            return new(Status.OutLimit, "잠시 후에 다시 시도해주세요.");
+            return new(Status.Fail, "잠시 후에 다시 시도해주세요.");
         return await AlreadyRegistered(pMail);
     }
 
