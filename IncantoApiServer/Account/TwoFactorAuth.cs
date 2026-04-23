@@ -20,7 +20,7 @@ public partial class Account {
         
         var code = _random.Next(0, 1000000);
         var codeString = code.ToString().PadLeft(6, '0');
-        _rlService.Add(
+        await _rlService.Add(
             $"2fa:MailCheck:{pAddress}",
             codeString,
             TimeSpan.FromMinutes(10)

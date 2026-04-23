@@ -17,8 +17,12 @@ public class Program {
 			await pAccount.SendMail(pInfo.Mail));
 		pApp.MapPost("/SignIn", async (Account.Account pAccount, SignUpInfo pInfo) =>
 			await pAccount.SignIn(pInfo.Mail, pInfo.PassWord));
-		pApp.MapPost("/SignUp", async (Account.Account pAccount, SignUpInfo pInfo ) =>
-			await pAccount.SignUp(pInfo.Name, pInfo.Mail, pInfo.PassWord, pInfo.TwoFactorAuth));
+		pApp.MapPost("/SignUp", async (Account.Account pAccount, SignUpInfo pInfo, HttpContext pContext) => {
+			var ip = pContext.Connection.RemoteIpAddress?.ToString();
+			if (ip is null)
+				return new(Status.Fail, "Ip is strange");
+			return await pAccount.SignUp(ip, pInfo.Name, pInfo.Mail, pInfo.PassWord, pInfo.TwoFactorAuth);
+		});
 		pApp.MapPost("/JoinMatch", async (MatchSystem pMatch, AccountToken pToken) =>
 			await pMatch.Enter(pToken));
 		pApp.MapPost("/ExitMatch", (MatchSystem pMatch, AccountToken pToken) =>
