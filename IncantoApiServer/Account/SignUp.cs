@@ -39,22 +39,15 @@ public partial class Account {
         if (available.Status != Status.Success)
             return available;
         
-        pPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
         await using var insertCommand = new MySqlCommand(InsertCommand, connection);
         insertCommand.Parameters.AddWithValue("@name", pName);
         insertCommand.Parameters.AddWithValue("@mail", pMail);
-        insertCommand.Parameters.AddWithValue("@password", pPassword);
+        insertCommand.Parameters.AddWithValue("@password", hashedPassword);
         if (await insertCommand.ExecuteNonQueryAsync() == 1) {
             await _rlService.Remove($"rl:SignUp:{pMail}");
             await _rlService.Remove($"2fa:MailCheck:{pMail}");
-            var guid = Guid.NewGuid().ToString();
-            await _rlService.Add($"auth:{pMail}", guid, LoginTokenExpire);
-
-            return new Result<AccountToken>(Status.Success, new() {
-                Name = pName,
-                Mail = pMail,
-                Guid = guid
-            });
+            return await SignIn(pMail, pPassword);
         }
         return new(Status.Fail, "회원가입에 실패했습니다.");
     }

@@ -48,7 +48,7 @@ public class Program {
 
 		pBuilder.WebHost.ConfigureKestrel(options => {
 			options.Listen(IPAddress.Any, 7272, listenOptions =>
-				listenOptions.UseHttps("Certification/certificate.pfx", Setting.Setting.Get("CertPassword"))
+				listenOptions.UseHttps("Certification/incanto.pfx", Setting.Setting.Get("CertPassword"))
 			);
 		});
 	}
@@ -59,12 +59,13 @@ public class Program {
 		builder.Services.AddEndpointsApiExplorer();
 		builder.Services.AddSwaggerGen();
 		
-		Certification(builder);
-		SetSingleton(builder);
-
 		builder.Services.ConfigureHttpJsonOptions(options => 
 			options.SerializerOptions.PropertyNamingPolicy = null
 		);
+        		
+		
+		Certification(builder);
+		SetSingleton(builder);
 		
 		var app = builder.Build();
 
