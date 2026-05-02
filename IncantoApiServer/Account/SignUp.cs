@@ -16,7 +16,7 @@ public partial class Account {
             10,
             TimeSpan.FromHours(1)
         );
-        if (rl.Allow)
+        if (!rl.Allow)
             return new(Status.Fail, "잠시 후 다시 시도해 주세요.");
         
         var token = await _rlService.Get($"2fa:MailCheck:{pMail}");
@@ -30,7 +30,6 @@ public partial class Account {
             return available;
         
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
-        pPassword = BCrypt.Net.BCrypt.HashPassword(pPassword);
         
         await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
         await connection.OpenAsync();
@@ -41,6 +40,8 @@ public partial class Account {
         if (await insertCommand.ExecuteNonQueryAsync() == 1) {
             await _rlService.Remove($"rl:SignUp:{pMail}");
             await _rlService.Remove($"2fa:MailCheck:{pMail}");
+            await RegisterCheckRemove(pIp);
+            
             return await SignIn(pMail, pPassword);
         }
         return new(Status.Fail, "회원가입에 실패했습니다.");
