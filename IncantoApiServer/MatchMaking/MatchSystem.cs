@@ -1,49 +1,83 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
 using Account;
+using IncantoApiServer.LogicServerConnection;
 using IncantoApiServer.UpdateLogic;
+using Newtonsoft.Json;
 using Redis;
 
 namespace MatchMaking;
 
-public class MatchPlayers(List<string> pPlayers, int pStartIdx) {
+using System.Text;
+using System.Text.Json;
+
+public class MatchPlayers() {
+
+	public MatchPlayers(List<int> pPlayers, int pStartIdx): this() {
+		Players = 
+			pPlayers.Count - pStartIdx >= MatchPerPlayer 
+				? pPlayers.Slice(pStartIdx, MatchPerPlayer)
+				: throw new IndexOutOfRangeException(
+					$"try to access {pStartIdx} ~ {pStartIdx + MatchPerPlayer} (size: {pPlayers.Count})"
+				);
+	}
+	
 	public const int MatchPerPlayer = 4;
-	public readonly IReadOnlyCollection<string> Players = 
-		pPlayers.Count - pStartIdx >= MatchPerPlayer 
-			? pPlayers.Slice(pStartIdx, MatchPerPlayer)
-			: throw new IndexOutOfRangeException(
-				$"try to access {pStartIdx} ~ {pStartIdx + MatchPerPlayer} (size: {pPlayers.Count})"
-			);
+	public IReadOnlyCollection<int> Players { get; set; }
+
+	public Byte[] Serialize() {
+		if (Players.Count != MatchPerPlayer)
+			throw new Exception($"Input was wrong. involved match player must be {MatchPerPlayer}. but {this}");
+		var result = new List<byte>();
+		foreach (var player in Players) {
+			result.AddRange(BitConverter.GetBytes(player));
+		}
+
+		return result.ToArray();
+	}
+		
+
+	public override string ToString() {
+		return string.Join(", ", Players);
+	}
 }
 
-public class MatchSystem(RateLimitService pRl, UpdateManager pManager): UpdateModule(pManager) {
+public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServerConnection pLogicServer): UpdateModule(pManager) {
 	
 	private readonly RateLimitService _rlService = pRl;
-	private readonly ConcurrentQueue<string> _waitMatch = new();
-	private readonly ConcurrentDictionary<string, bool> _waitStatus = new();
+	private readonly LogicServerConnection _logicServer = pLogicServer;
+	private readonly ConcurrentQueue<int> _waitMatch = new();
+	private readonly ConcurrentDictionary<int, bool> _waitStatus = new();
 
 	public async Task<Result> Enter(AccountToken pToken) {
 		var loginToken = await _rlService.Get($"auth:{pToken.Mail}");
+
+		if (_waitStatus.TryGetValue(pToken.Id, out var value) && value)
+			return new(Status.Fail, "이미 대기 중입니다.");
 		if (loginToken.TTL == -2)
 			return new(Status.Fail, "로그인 상태가 아닙니다. 로그인 후 다시 시도해 주세요.");
         
 		if((string)loginToken.Value != pToken.Guid)
 			return new(Status.Fail, "올바르지 않은 토큰입니다.");
 		
-		_waitMatch.Enqueue(pToken.Guid);
-		_waitStatus[pToken.Guid] = true;
+		_waitMatch.Enqueue(pToken.Id);
+		_waitStatus[pToken.Id] = true;
 		await _rlService.ChangeTTL($"auth:{pToken.Mail}", Account.Account.LoginTokenExpire);
 		return new(Status.Success, "정상적으로 매치에 참여했습니다.");
 	}
 
-	public void Exit(AccountToken pToken) =>
-		_waitStatus.TryRemove(pToken.Guid, out _);
+	public Result Exit(AccountToken pToken) =>
+		_waitStatus.TryRemove(pToken.Id, out _)
+			? new(Status.Success, "정상적으로 매치에서 나왔습니다.")
+			: new(Status.Fail, "매치에서 나오는 데 실패했습니다. 다시 시도해주세요.");
 
-	public MatchPlayers[] Tick() {
+	public async Task<MatchPlayers[]> Tick() {
 
+		Console.WriteLine($"Wait: {_waitMatch.Count}");
 		if (_waitMatch.Count < MatchPlayers.MatchPerPlayer)
 			return [];
 		
-		var playablePlayer = new List<string>();
+		var playablePlayer = new List<int>();
 		while (_waitMatch.TryDequeue(out var player)) {
 			if(!_waitStatus.TryGetValue(player, out var v) || !v)
 				continue;
@@ -55,6 +89,7 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager): UpdateMo
 		var generatedGroup = playablePlayer.Count / MatchPlayers.MatchPerPlayer;
 		var result = new MatchPlayers[generatedGroup];
 		for (int i = 0; i < generatedGroup; i++, idx += MatchPlayers.MatchPerPlayer) {
+			Console.WriteLine("Make");
 			result[i] = new MatchPlayers(playablePlayer, idx);
 			for (int j = 0; j < MatchPlayers.MatchPerPlayer; j++)
 				_waitStatus.Remove(playablePlayer[idx + j], out _);
@@ -65,11 +100,18 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager): UpdateMo
 			_waitStatus[playablePlayer[idx]] = true;
 		}
 
+		await Task.WhenAll(
+			result.Select(match => _logicServer.SendMatchData(match))
+		);
+		foreach (var match in result) {
+			Console.WriteLine($"Make match: {match}");
+		}
+		Console.WriteLine("Generation End");
+
 		return result;
 	}
 
 	public async override Task Update() {
 		var match = Tick();
-		//Console.WriteLine(match.Length);
 	}
 }

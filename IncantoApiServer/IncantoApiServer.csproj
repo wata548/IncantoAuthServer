@@ -17,4 +17,10 @@
       <Folder Include="Certification\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Newtonsoft.Json">
+        <HintPath>..\..\..\..\..\DLLS\Newtonsoft.Json.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

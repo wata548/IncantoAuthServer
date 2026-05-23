@@ -1,11 +1,13 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Account;
+using IncantoApiServer.LogicServerConnection;
 using IncantoApiServer.UpdateLogic;
 using MatchMaking;
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Redis;
+using Setting;
 using StackExchange.Redis;
 
 public class Program {
@@ -35,15 +37,16 @@ public class Program {
 			var redis = ConnectionMultiplexer.Connect(
 				new ConfigurationOptions {
 					EndPoints = {
-						{ Setting.Setting.Get("RedisEndPoint"), int.Parse(Setting.Setting.Get("RedisPort")) }
+						{ Env.Get("RedisEndPoint"), int.Parse(Env.Get("RedisPort")) }
 					},
 					User = "default",
-					Password = Setting.Setting.Get("RedisPassword")
+					Password = Env.Get("RedisPassword")
 				}
 			);
 			return new RateLimitService(redis.GetDatabase());
 		});	
 		pBuilder.Services.AddSingleton<Account.Account>();
+		pBuilder.Services.AddSingleton<LogicServerConnection>();
 		pBuilder.Services.AddSingleton<MatchSystem>();
 		pBuilder.Services.AddHostedService<UpdateLoop>();
 	}
@@ -52,13 +55,13 @@ public class Program {
 
 		pBuilder.WebHost.ConfigureKestrel(options => {
 			options.Listen(IPAddress.Any, 7272, listenOptions =>
-				listenOptions.UseHttps("Certification/incanto.pfx", Setting.Setting.Get("CertPassword"))
+				listenOptions.UseHttps("Certification/incanto.pfx", Setting.Env.Get("CertPassword"))
 			);
 		});
 	}
     
 	public static void Main(string[] args) {
-		Setting.Setting.Setup();
+		Env.Setup();
 		var builder = WebApplication.CreateBuilder(args);
 		builder.Services.AddEndpointsApiExplorer();
 		builder.Services.AddSwaggerGen();

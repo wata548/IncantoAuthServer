@@ -1,4 +1,6 @@
-﻿namespace Account;
+﻿using Setting;
+
+namespace Account;
 using Redis;
 using MySql.Data.MySqlClient;
 
@@ -20,7 +22,7 @@ public partial class Account (RateLimitService pRl) {
 		var rl = await GetRLAvailableMail(pIp);
 		if (!rl.Allow)
 			return new(Status.Fail, "잠시 후에 다시 시도해주세요.");
-		await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
+		await using var connection = new MySqlConnection(Env.Get("DBConnect"));
 		await connection.OpenAsync();	
 		return await AlreadyRegistered(pMail, connection);
 	}

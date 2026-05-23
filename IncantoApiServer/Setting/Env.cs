@@ -2,7 +2,7 @@
 
 namespace Setting;
 
-public static class Setting {
+public static class Env {
     private static ConcurrentDictionary<string, string> _envs;
 
     public static string Get(string pKey) => _envs[pKey];

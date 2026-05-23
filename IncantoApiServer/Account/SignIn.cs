@@ -1,4 +1,6 @@
-﻿namespace Account;
+﻿using Setting;
+
+namespace Account;
 using Redis;
 using MySql.Data.MySqlClient;
 
@@ -15,7 +17,7 @@ public partial class Account {
 
 		const string commandString = "SELECT ID, PASSWORD, NAME FROM USERS WHERE MAIL = @mail";
 		
-		await using var connection = new MySqlConnection(Setting.Setting.Get("DBConnect"));
+		await using var connection = new MySqlConnection(Env.Get("DBConnect"));
 		await connection.OpenAsync();
 		
 		await using var command = new MySqlCommand(commandString, connection);

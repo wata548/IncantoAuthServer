@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Mail;
+using Setting;
 
 namespace Extension;
 
@@ -8,7 +9,7 @@ public static class Mail {
     public static async Task Send(string pTarget, string pSubject, string pContext) {
         //message
         using var mail = new MailMessage();
-        mail.From = new MailAddress(Setting.Setting.Get("ServerMailId"));
+        mail.From = new MailAddress(Env.Get("ServerMailId"));
         mail.To.Add(pTarget);
         mail.Subject = pSubject;
         mail.Body = pContext;
@@ -17,8 +18,8 @@ public static class Mail {
         using var client = new SmtpClient("smtp.gmail.com", 587);
         client.UseDefaultCredentials = false;
         client.Credentials = new NetworkCredential(
-            Setting.Setting.Get("ServerMailId"), 
-            Setting.Setting.Get("ServerMailPw")
+            Env.Get("ServerMailId"), 
+            Env.Get("ServerMailPw")
         );
         client.EnableSsl = true;
         
