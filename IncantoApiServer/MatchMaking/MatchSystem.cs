@@ -48,14 +48,24 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServ
 	private readonly LogicServerConnection _logicServer = pLogicServer;
 	private readonly ConcurrentQueue<int> _waitMatch = new();
 	private readonly ConcurrentDictionary<int, bool> _waitStatus = new();
+	private readonly ConcurrentDictionary<int, bool> _playingGame = new();
 
+	public void EndGame(MatchPlayers pMatch) {
+		foreach (var player in pMatch.Players) {
+			_playingGame.Remove(player, out _);
+		}
+	}
+	
 	public async Task<Result> Enter(AccountToken pToken) {
 		var loginToken = await _rlService.Get($"auth:{pToken.Mail}");
-
-		if (_waitStatus.TryGetValue(pToken.Id, out var value) && value)
-			return new(Status.Fail, "이미 대기 중입니다.");
+		
 		if (loginToken.TTL == -2)
 			return new(Status.Fail, "로그인 상태가 아닙니다. 로그인 후 다시 시도해 주세요.");
+		if (_waitStatus.TryGetValue(pToken.Id, out var isWait) && isWait)
+			return new(Status.Fail, "이미 대기 중입니다.");
+
+		if (_playingGame.TryGetValue(pToken.Id, out var isPlaying) && isPlaying)
+			return new(Status.Success, "재접속 시도합니다.");
         
 		if((string)loginToken.Value != pToken.Guid)
 			return new(Status.Fail, "올바르지 않은 토큰입니다.");
@@ -82,7 +92,6 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServ
 			if(!_waitStatus.TryGetValue(player, out var v) || !v)
 				continue;
 			playablePlayer.Add(player);
-			_waitStatus[player] = false;
 		}
 
 		var idx = 0;
@@ -91,13 +100,14 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServ
 		for (int i = 0; i < generatedGroup; i++, idx += MatchPlayers.MatchPerPlayer) {
 			Console.WriteLine("Make");
 			result[i] = new MatchPlayers(playablePlayer, idx);
-			for (int j = 0; j < MatchPlayers.MatchPerPlayer; j++)
+			for (int j = 0; j < MatchPlayers.MatchPerPlayer; j++) {
+				_playingGame.TryAdd(playablePlayer[idx + j], true);
 				_waitStatus.Remove(playablePlayer[idx + j], out _);
+			}
 		}
 
 		for (; idx < playablePlayer.Count; idx++) {
 			_waitMatch.Enqueue(playablePlayer[idx]);
-			_waitStatus[playablePlayer[idx]] = true;
 		}
 
 		await Task.WhenAll(
