@@ -24,7 +24,9 @@ public class UpdateLoop(UpdateManager pManager): BackgroundService {
 			);
 			stopWatch.Stop();
 
-			await Task.Delay(UpdateInterval - (int)stopWatch.ElapsedMilliseconds, pStoppingToken);
+			var term = UpdateInterval - (int)stopWatch.ElapsedMilliseconds;
+			term = int.Max(0, term);
+			await Task.Delay(term, pStoppingToken);
 		}
 	}
 }

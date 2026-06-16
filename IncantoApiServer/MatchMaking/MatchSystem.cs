@@ -3,6 +3,7 @@ using System.Text;
 using Account;
 using IncantoApiServer.LogicServerConnection;
 using IncantoApiServer.UpdateLogic;
+using Match;
 using Newtonsoft.Json;
 using Redis;
 
@@ -10,37 +11,6 @@ namespace MatchMaking;
 
 using System.Text;
 using System.Text.Json;
-
-public class MatchPlayers() {
-
-	public MatchPlayers(List<int> pPlayers, int pStartIdx): this() {
-		Players = 
-			pPlayers.Count - pStartIdx >= MatchPerPlayer 
-				? pPlayers.Slice(pStartIdx, MatchPerPlayer)
-				: throw new IndexOutOfRangeException(
-					$"try to access {pStartIdx} ~ {pStartIdx + MatchPerPlayer} (size: {pPlayers.Count})"
-				);
-	}
-	
-	public const int MatchPerPlayer = 4;
-	public IReadOnlyCollection<int> Players { get; set; }
-
-	public Byte[] Serialize() {
-		if (Players.Count != MatchPerPlayer)
-			throw new Exception($"Input was wrong. involved match player must be {MatchPerPlayer}. but {this}");
-		var result = new List<byte>();
-		foreach (var player in Players) {
-			result.AddRange(BitConverter.GetBytes(player));
-		}
-
-		return result.ToArray();
-	}
-		
-
-	public override string ToString() {
-		return string.Join(", ", Players);
-	}
-}
 
 public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServerConnection pLogicServer): UpdateModule(pManager) {
 	
@@ -83,7 +53,6 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServ
 
 	public async Task<MatchPlayers[]> Tick() {
 
-		Console.WriteLine($"Wait: {_waitMatch.Count}");
 		if (_waitMatch.Count < MatchPlayers.MatchPerPlayer)
 			return [];
 		
@@ -113,9 +82,7 @@ public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServ
 		await Task.WhenAll(
 			result.Select(match => _logicServer.SendMatchData(match))
 		);
-		foreach (var match in result) {
-			Console.WriteLine($"Make match: {match}");
-		}
+		SaveMatchInfo.SaveMatches(result);
 		Console.WriteLine("Generation End");
 
 		return result;
