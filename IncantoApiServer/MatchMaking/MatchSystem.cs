@@ -12,20 +12,27 @@ namespace MatchMaking;
 using System.Text;
 using System.Text.Json;
 
-public class MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServerConnection pLogicServer): UpdateModule(pManager) {
+public class MatchSystem: UpdateModule {
 	
-	private readonly RateLimitService _rlService = pRl;
-	private readonly LogicServerConnection _logicServer = pLogicServer;
+	private readonly RateLimitService _rlService;
+	private readonly LogicServerConnection _logicServer;
 	private readonly ConcurrentQueue<int> _waitMatch = new();
 	private readonly ConcurrentDictionary<int, bool> _waitStatus = new();
 	private readonly ConcurrentDictionary<int, bool> _playingGame = new();
 
-	public void EndGame(MatchPlayers pMatch) {
-		foreach (var player in pMatch.Players) {
-			_playingGame.Remove(player, out _);
-		}
+	public MatchSystem(RateLimitService pRl, UpdateManager pManager, LogicServerConnection pLogicServer): base(pManager) {
+		_rlService = pRl;
+		_logicServer = pLogicServer;
+		_logicServer.Init();
+		_logicServer.OnMatchEnd += End;
 	}
-	
+
+	private void End(IEnumerable<MatchPlayerResult> pPlayers) {
+		foreach (var player in pPlayers) {
+			_playingGame[player.Idx] = false;
+		}
+	} 
+
 	public async Task<Result> Enter(AccountToken pToken) {
 		var loginToken = await _rlService.Get($"auth:{pToken.Mail}");
 		

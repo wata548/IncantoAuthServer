@@ -29,13 +29,14 @@ public class MatchResult: ConvertBytes {
     public IEnumerable<int> RankedPlayer => Rank.Select(d => d.Idx);
 
     public MatchResult(byte[] pBytes, ref int pStart) {
+        MatchUUID = new(pBytes[pStart..(pStart + 16)]);
+        pStart += 16;
         var result = new MatchPlayerResult[MatchPlayers.MatchPerPlayer];
         for (int i = 0; i < result.Length; i++) {
             result[i] = new(pBytes, ref pStart);
         }
 
         Rank = result;
-        MatchUUID = new(pBytes[pStart..(pStart + 16)]);
     }
     
     public override IEnumerable<byte> GetBytes() {
